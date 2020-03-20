@@ -1,0 +1,9 @@
+---
+- hosts: default
+  become: true
+  
+  tasks:
+    - name: Install Vim
+      package:
+        name: "vim"
+        state: present

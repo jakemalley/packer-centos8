@@ -1,0 +1,73 @@
+{
+    "variables": {
+      "version": "",
+      "ssh_username": "vagrant",
+      "ssh_password": "vagrant"
+    },
+    "provisioners": [
+      {
+        "type": "shell",
+        "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+        "script": "ansible/install.sh"
+      },
+      {
+        "type": "ansible",
+        "playbook_file": "ansible/provision.yml"
+      },
+      {
+        "type": "shell",
+        "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+        "script": "ansible/remove.sh"
+      }
+    ],
+    "builders": [
+      {
+        "type": "virtualbox-iso",
+        "boot_command": [
+          "<tab>",
+          "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+          "quiet text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/kickstart.cfg<enter><wait>"
+        ],
+        "boot_wait": "10s",
+        "disk_size": 61440,
+        "guest_os_type": "RedHat_64",
+        "headless": true,
+        "http_directory": "http",
+        "iso_urls": [
+          "iso/CentOS-8.1.1911-x86_64-dvd1.iso"
+        ],
+        "iso_checksum_type": "sha256",
+        "iso_checksum": "3ee3f4ea1538e026fff763e2b284a6f20b259d91d1ad5688f5783a67d279423b",
+        "ssh_username": "{{user `ssh_username`}}",
+        "ssh_password": "{{user `ssh_password`}}",
+        "ssh_port": 22,
+        "ssh_wait_timeout": "10000s",
+        "shutdown_command": "echo 'vagrant' | sudo -S shutdown -P now",
+        "guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
+        "virtualbox_version_file": ".vbox_version",
+        "vm_name": "packer-centos-8-x86_64",
+        "vboxmanage": [
+          [
+            "modifyvm",
+            "{{.Name}}",
+            "--memory",
+            "2048"
+          ],
+          [
+            "modifyvm",
+            "{{.Name}}",
+            "--cpus",
+            "2"
+          ]
+        ]
+      }
+    ],
+    "post-processors": [
+      [
+        {
+          "output": "build/{{.Provider}}-centos8.box",
+          "type": "vagrant"
+        }
+      ]
+    ]
+  }
