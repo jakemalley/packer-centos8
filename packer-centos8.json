@@ -1,25 +1,10 @@
 {
     "variables": {
-      "version": "",
+      "version": "0.0.1",
+      "description": "CentOS 8 Packer Image",
       "ssh_username": "vagrant",
       "ssh_password": "vagrant"
     },
-    "provisioners": [
-      {
-        "type": "shell",
-        "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
-        "script": "ansible/install.sh"
-      },
-      {
-        "type": "ansible",
-        "playbook_file": "ansible/provision.yml"
-      },
-      {
-        "type": "shell",
-        "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
-        "script": "ansible/remove.sh"
-      }
-    ],
     "builders": [
       {
         "type": "virtualbox-iso",
@@ -62,11 +47,27 @@
         ]
       }
     ],
+    "provisioners": [
+      {
+        "type": "shell",
+        "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+        "script": "ansible/install.sh"
+      },
+      {
+        "type": "ansible",
+        "playbook_file": "ansible/provision.yml"
+      },
+      {
+        "type": "shell",
+        "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+        "script": "ansible/remove.sh"
+      }
+    ],
     "post-processors": [
       [
         {
-          "output": "build/{{.Provider}}-centos8.box",
-          "type": "vagrant"
+          "type": "vagrant",
+          "output": "build/{{.Provider}}-centos8.box"
         }
       ]
     ]
