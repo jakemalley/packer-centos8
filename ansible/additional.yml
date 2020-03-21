@@ -1,0 +1,14 @@
+---
+
+#
+# Template for additional tasks to run during Vagrant provisioning.
+# Requires Ansible to be installed on the Host.
+#
+
+- hosts: all
+  gather_facts: yes
+  become: true
+
+  tasks:
+
+    - ping:

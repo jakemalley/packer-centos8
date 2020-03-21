@@ -1,7 +1,7 @@
 {
     "variables": {
-      "version": "0.0.1",
-      "description": "CentOS 8 Packer Image",
+      "version": "0.0.2",
+      "description": "CentOS 8 Image Built with Packer",
       "ssh_username": "vagrant",
       "ssh_password": "vagrant"
     },
@@ -68,6 +68,12 @@
         {
           "type": "vagrant",
           "output": "build/{{.Provider}}-centos8.box"
+        },
+        {
+          "type": "vagrant-cloud",
+          "box_tag": "jakemalley/centos8",
+          "version": "{{user `version`}}",
+          "version_description": "{{user `description`}}"
         }
       ]
     ]

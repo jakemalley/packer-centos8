@@ -1,9 +1,199 @@
 ---
-- hosts: default
+- hosts: all
+  gather_facts: yes
   become: true
-  
+
   tasks:
-    - name: Install Vim
-      package:
-        name: "vim"
+
+    - name: Install EPEL
+      dnf:
+        name: "epel-release"
+        state: latest
+
+    - name: Upgrade All Packages
+      dnf:
+        name: "*"
+        state: latest
+
+    - name: Autoremove Unneeded Packages Installed As Dependencies
+      dnf:
+        autoremove: yes
+
+    - name: Remove iwl-* Packages
+      dnf:
+        name: "iwl-*"
+        state: absent
+        autoremove: yes
+
+    - name: Install Useful Packages
+      dnf:
+        name:
+          - vim
+          - tmux
+          - curl
+          - wget
+          - git
+          - rsync
+          - tcpdump
+          - net-tools
+          - bind-utils
+          - nfs-utils
+          - python3
+          - python3-libselinux
+
+    - name: Configure SSHD
+      lineinfile:
+        dest: /etc/ssh/sshd_config
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
         state: present
+      with_items:
+        - { regexp: '^UseDNS', line: 'UseDNS no' }
+        - { regexp: '^GSSAPIAuthentication', line: 'GSSAPIAuthentication no' }
+
+    - name: Create A .ssh Directory for the vagrant User
+      file:
+        path: /home/vagrant/.ssh
+        state: directory
+        owner: vagrant
+        group: vagrant
+        mode: 0700
+
+    - name: Insert The Vagrant Public SSH Key
+      get_url:
+        url: https://raw.githubusercontent.com/hashicorp/vagrant/master/keys/vagrant.pub
+        dest: /home/vagrant/.ssh/authorized_keys
+        owner: vagrant
+        group: vagrant
+        mode: 0600
+
+    - name: Get The Current Kernel Release
+      command: uname -r
+      changed_when: false
+      register: kernel_release
+
+    - name: Install Dependencies For VirtualBox Guest Additions
+      dnf:
+        name:
+          - bzip2
+          - dkms
+          - kernel-headers
+          - kernel-devel
+          - "kernel-devel-{{ kernel_release.stdout }}"
+          - gcc
+          - cpp
+          - make
+          - perl
+      when: ansible_virtualization_type == "virtualbox"
+
+    - name: Get VirtualBox Version
+      command: cat /home/vagrant/.vbox_version
+      changed_when: false
+      register: virtualbox_version
+      when: ansible_virtualization_type == "virtualbox"
+
+    - name: Mount VirtualBox Guest Additions ISO
+      mount:
+        name: /tmp/vbox
+        src: "/home/vagrant/VBoxGuestAdditions_{{ virtualbox_version.stdout }}.iso"
+        opts: loop
+        state: mounted
+        fstype: iso9660
+      when: ansible_virtualization_type == "virtualbox"
+
+    - name: Run VirtualBox Guest Additions Installer
+      command: sh /tmp/vbox/VBoxLinuxAdditions.run
+      changed_when: true
+      when: ansible_virtualization_type == "virtualbox"
+
+    - name: Unmount VirtualBox Guest Additions ISO
+      mount:
+        name: /tmp/vbox
+        src: "/home/vagrant/VBoxGuestAdditions_{{ virtualbox_version.stdout }}.iso"
+        state: absent
+        fstype: iso9660
+      when: ansible_virtualization_type == "virtualbox"
+
+    - name: Remove Unneeded Packages
+      dnf:
+        name:
+          - cpp
+          - kernel-headers
+          - "kernel-devel*"
+        state: absent
+
+    - name: Enable Firewalld
+      service:
+        name: firewalld
+        state: started
+        enabled: yes
+
+    - name: Firewalld Enable ssh
+      firewalld:
+        zone: public
+        service: ssh
+        permanent: yes
+        state: enabled
+
+    - name: Firewalld Disable cockpit
+      firewalld:
+        zone: public
+        service: cockpit
+        permanent: yes
+        state: disabled
+
+    - name: Firewalld Disable dhcpv6-client
+      firewalld:
+        zone: public
+        service: cockpit
+        permanent: yes
+        state: disabled
+
+    - name: Firewalld Set Default Zone Public
+      command: firewall-cmd --set-default-zone=public
+
+    - name: Firewalld Reload
+      command: firewall-cmd --reload
+
+    - name: Clean Up Ready For Box Creation
+      shell: |
+        rm -f /etc/ssh/ssh_host_*
+        rm -f /etc/udev/rules.d/70-persistent-net.rules
+        sed -i '/^[ \t]*\(HWADDR\|UUID\)/d' /etc/sysconfig/network-scripts/ifcfg-eth*
+        dnf clean all
+        rm -rf /var/cache/dnf
+        if [ -f /var/log/audit/audit.log ]; then
+          cat /dev/null > /var/log/audit/audit.log
+        fi
+        if [ -f /var/log/messages ]; then
+          cat /dev/null > /var/log/messages
+        fi
+        if [ -f /var/log/wtmp ]; then
+          cat /dev/null > /var/log/wtmp
+        fi
+        rm -f /var/log/audit/audit.log.*
+        rm -f /var/log/messages-*
+        rm -f /var/log/maillog-*
+        rm -f /var/log/cron-*
+        rm -f /var/log/spooler-*
+        rm -f /var/log/secure-*
+        rm -f /var/log/yum-*
+        rm -f /var/log/dnf-*
+        rm -f /var/log/up2date-*
+        rm -f /var/log/vboxadd-*
+        rm -f /root/bonemeal-installer.log
+        rm -f /root/anaconda-ks.cfg
+        rm -f /root/original-ks.cfg
+        rm -f /root/.bash_history
+        rm -f /root/.cshrc
+        rm -f /root/.tcshrc
+        rm -f /home/vagrant/.bash_history
+        rm -f /home/vagrant/VBoxGuestAdditions*
+        rm -f /home/vagrant/.vbox_version
+        rm -rf /tmp/*
+        rm -rf /var/tmp/*
+        rm -f /etc/motd.d/cockpit
+        rm -f /etc/dhcp/dhclient-exit-hooks
+        echo "127.0.0.1	localhost localhost.localdomain localhost4 localhost4.localdomain4" > /etc/hosts
+        echo "::1	localhost localhost.localdomain localhost6 localhost6.localdomain6" >> /etc/hosts
+        warn=false
