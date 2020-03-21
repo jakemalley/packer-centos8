@@ -14,4 +14,4 @@ VERSION="0.0.2"
 DESCRIPTION="CentOS 8 Image Built with Packer"
 
 echo "Building version v${VERSION}..."
-packer build -var "version=${VERSION}" -var "description=${DESCRIPTION}" $PACKER_FILE
+packer build -var "version=${VERSION}" -var "description=${DESCRIPTION}" "${PACKER_FILE}"
