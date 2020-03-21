@@ -1,7 +1,7 @@
 {
     "variables": {
-      "version": "0.0.2",
-      "description": "CentOS 8 Image Built with Packer",
+      "version": "",
+      "description": "",
       "ssh_username": "vagrant",
       "ssh_password": "vagrant"
     },
