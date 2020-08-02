@@ -10,7 +10,7 @@ if [ -z "${PACKER_FILE}" ]; then
 fi
 
 
-VERSION="0.0.2"
+VERSION="0.0.3"
 DESCRIPTION="CentOS 8 Image Built with Packer"
 
 echo "Building version v${VERSION}..."

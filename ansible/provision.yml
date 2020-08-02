@@ -24,6 +24,7 @@
         name: "iwl-*"
         state: absent
         autoremove: yes
+      ignore_errors: True
 
     - name: Install Useful Packages
       dnf:
