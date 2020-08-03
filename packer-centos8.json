@@ -1,80 +1,80 @@
 {
-    "variables": {
-      "version": "",
-      "description": "",
-      "ssh_username": "vagrant",
-      "ssh_password": "vagrant"
-    },
-    "builders": [
-      {
-        "type": "virtualbox-iso",
-        "boot_command": [
-          "<tab>",
-          "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
-          "quiet text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/kickstart.cfg<enter><wait>"
+  "variables": {
+    "version": "",
+    "description": "",
+    "ssh_username": "vagrant",
+    "ssh_password": "vagrant"
+  },
+  "builders": [
+    {
+      "type": "virtualbox-iso",
+      "boot_command": [
+        "<tab>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "quiet text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/kickstart.cfg<enter><wait>"
+      ],
+      "boot_wait": "10s",
+      "disk_size": 61440,
+      "guest_os_type": "RedHat_64",
+      "headless": true,
+      "http_directory": "http",
+      "iso_urls": [
+        "iso/CentOS-8.2.2004-x86_64-dvd1.iso"
+      ],
+      "iso_checksum_type": "sha256",
+      "iso_checksum": "c87a2d81d67bbaeaf646aea5bedd70990078ec252fc52f5a7d65ff609871e255",
+      "ssh_username": "{{user `ssh_username`}}",
+      "ssh_password": "{{user `ssh_password`}}",
+      "ssh_port": 22,
+      "ssh_wait_timeout": "10000s",
+      "shutdown_command": "echo 'vagrant' | sudo -S shutdown -P now",
+      "guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
+      "virtualbox_version_file": ".vbox_version",
+      "vm_name": "packer-centos-8-x86_64",
+      "vboxmanage": [
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--memory",
+          "2048"
         ],
-        "boot_wait": "10s",
-        "disk_size": 61440,
-        "guest_os_type": "RedHat_64",
-        "headless": true,
-        "http_directory": "http",
-        "iso_urls": [
-          "iso/CentOS-8.2.2004-x86_64-dvd1.iso"
-        ],
-        "iso_checksum_type": "sha256",
-        "iso_checksum": "c87a2d81d67bbaeaf646aea5bedd70990078ec252fc52f5a7d65ff609871e255",
-        "ssh_username": "{{user `ssh_username`}}",
-        "ssh_password": "{{user `ssh_password`}}",
-        "ssh_port": 22,
-        "ssh_wait_timeout": "10000s",
-        "shutdown_command": "echo 'vagrant' | sudo -S shutdown -P now",
-        "guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
-        "virtualbox_version_file": ".vbox_version",
-        "vm_name": "packer-centos-8-x86_64",
-        "vboxmanage": [
-          [
-            "modifyvm",
-            "{{.Name}}",
-            "--memory",
-            "2048"
-          ],
-          [
-            "modifyvm",
-            "{{.Name}}",
-            "--cpus",
-            "2"
-          ]
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--cpus",
+          "2"
         ]
-      }
-    ],
-    "provisioners": [
-      {
-        "type": "shell",
-        "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
-        "script": "ansible/install.sh"
-      },
-      {
-        "type": "ansible",
-        "playbook_file": "ansible/provision.yml"
-      },
-      {
-        "type": "shell",
-        "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
-        "script": "ansible/remove.sh"
-      }
-    ],
-    "post-processors": [
-      [
-        {
-          "type": "vagrant",
-          "output": "build/{{.Provider}}-centos8.box"
-        },
-        {
-          "type": "vagrant-cloud",
-          "box_tag": "jakemalley/centos8",
-          "version": "{{user `version`}}",
-          "version_description": "{{user `description`}}"
-        }
       ]
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "script": "ansible/install.sh"
+    },
+    {
+      "type": "ansible",
+      "playbook_file": "ansible/provision.yml"
+    },
+    {
+      "type": "shell",
+      "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "script": "ansible/remove.sh"
+    }
+  ],
+  "post-processors": [
+    [
+      {
+        "type": "vagrant",
+        "output": "build/{{.Provider}}-centos8.box"
+      },
+      {
+        "type": "vagrant-cloud",
+        "box_tag": "jakemalley/centos8",
+        "version": "{{user `version`}}",
+        "version_description": "{{user `description`}}"
+      }
     ]
-  }
+  ]
+}
