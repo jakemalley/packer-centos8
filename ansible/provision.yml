@@ -1,9 +1,18 @@
 ---
 - hosts: all
   gather_facts: yes
-  become: true
+  become: yes
+
+  vars:
+    packer_box_description: "Built With Packer!"
+    packer_box_version: "0.0.0"
 
   tasks:
+
+    - name: Create Version File
+      copy:
+        content: "Box Description: {{ packer_box_description }}\nBox Version: v{{ packer_box_version }}\n"
+        dest: /root/.packer_info
 
     - name: Install EPEL
       dnf:
@@ -24,7 +33,7 @@
         name: "iwl-*"
         state: absent
         autoremove: yes
-      ignore_errors: True
+      ignore_errors: yes
 
     - name: Install Useful Packages
       dnf:
@@ -70,7 +79,7 @@
 
     - name: Get The Current Kernel Release
       command: uname -r
-      changed_when: false
+      changed_when: no
       register: kernel_release
 
     - name: Install Dependencies For VirtualBox Guest Additions
@@ -89,7 +98,7 @@
 
     - name: Get VirtualBox Version
       command: cat /home/vagrant/.vbox_version
-      changed_when: false
+      changed_when: no
       register: virtualbox_version
       when: ansible_virtualization_type == "virtualbox"
 
@@ -104,7 +113,7 @@
 
     - name: Run VirtualBox Guest Additions Installer
       command: sh /tmp/vbox/VBoxLinuxAdditions.run
-      changed_when: true
+      changed_when: yes
       when: ansible_virtualization_type == "virtualbox"
 
     - name: Unmount VirtualBox Guest Additions ISO
@@ -155,46 +164,3 @@
 
     - name: Firewalld Reload
       command: firewall-cmd --reload
-
-    - name: Clean Up Ready For Box Creation
-      shell: |
-        rm -f /etc/ssh/ssh_host_*
-        rm -f /etc/udev/rules.d/70-persistent-net.rules
-        sed -i '/^[ \t]*\(HWADDR\|UUID\)/d' /etc/sysconfig/network-scripts/ifcfg-eth*
-        dnf clean all
-        rm -rf /var/cache/dnf
-        if [ -f /var/log/audit/audit.log ]; then
-          cat /dev/null > /var/log/audit/audit.log
-        fi
-        if [ -f /var/log/messages ]; then
-          cat /dev/null > /var/log/messages
-        fi
-        if [ -f /var/log/wtmp ]; then
-          cat /dev/null > /var/log/wtmp
-        fi
-        rm -f /var/log/audit/audit.log.*
-        rm -f /var/log/messages-*
-        rm -f /var/log/maillog-*
-        rm -f /var/log/cron-*
-        rm -f /var/log/spooler-*
-        rm -f /var/log/secure-*
-        rm -f /var/log/yum-*
-        rm -f /var/log/dnf-*
-        rm -f /var/log/up2date-*
-        rm -f /var/log/vboxadd-*
-        rm -f /root/bonemeal-installer.log
-        rm -f /root/anaconda-ks.cfg
-        rm -f /root/original-ks.cfg
-        rm -f /root/.bash_history
-        rm -f /root/.cshrc
-        rm -f /root/.tcshrc
-        rm -f /home/vagrant/.bash_history
-        rm -f /home/vagrant/VBoxGuestAdditions*
-        rm -f /home/vagrant/.vbox_version
-        rm -rf /tmp/*
-        rm -rf /var/tmp/*
-        rm -f /etc/motd.d/cockpit
-        rm -f /etc/dhcp/dhclient-exit-hooks
-        echo "127.0.0.1	localhost localhost.localdomain localhost4 localhost4.localdomain4" > /etc/hosts
-        echo "::1	localhost localhost.localdomain localhost6 localhost6.localdomain6" >> /etc/hosts
-        warn=false
