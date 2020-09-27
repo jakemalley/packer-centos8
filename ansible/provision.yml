@@ -11,7 +11,11 @@
 
     - name: Create Version File
       copy:
-        content: "Box Description: {{ packer_box_description }}\nBox Version: v{{ packer_box_version }}\n"
+        content: |
+          Built with Packer!
+          Box Description: {{ packer_box_description }}
+          Box Version: v{{ packer_box_version }}\n"
+          Build Date: {{ ansible_date_time.date }} {{ ansible_date_time.time }}
         dest: /root/.packer_info
 
     - name: Install EPEL
@@ -23,17 +27,20 @@
       dnf:
         name: "*"
         state: latest
+      when: ansible_os_family == "RedHat"
 
     - name: Autoremove Unneeded Packages Installed As Dependencies
       dnf:
         autoremove: yes
+      when: ansible_os_family == "RedHat"
 
-    - name: Remove iwl-* Packages
+    - name: Remove iwl*firmware Packages
       dnf:
-        name: "iwl-*"
+        name: "iwl*firmware"
         state: absent
         autoremove: yes
       ignore_errors: yes
+      when: ansible_os_family == "RedHat"
 
     - name: Install Useful Packages
       dnf:
@@ -50,6 +57,8 @@
           - nfs-utils
           - python3
           - python3-libselinux
+        state: latest
+      when: ansible_os_family == "RedHat"
 
     - name: Configure SSHD
       lineinfile:
@@ -81,6 +90,7 @@
       command: uname -r
       changed_when: no
       register: kernel_release
+      when: ansible_virtualization_type | lower == "virtualbox"
 
     - name: Install Dependencies For VirtualBox Guest Additions
       dnf:
@@ -94,13 +104,15 @@
           - cpp
           - make
           - perl
-      when: ansible_virtualization_type == "virtualbox"
+      when:
+        - ansible_os_family == "RedHat"
+        - ansible_virtualization_type | lower == "virtualbox"
 
     - name: Get VirtualBox Version
       command: cat /home/vagrant/.vbox_version
       changed_when: no
       register: virtualbox_version
-      when: ansible_virtualization_type == "virtualbox"
+      when: ansible_virtualization_type | lower == "virtualbox"
 
     - name: Mount VirtualBox Guest Additions ISO
       mount:
@@ -109,12 +121,12 @@
         opts: loop
         state: mounted
         fstype: iso9660
-      when: ansible_virtualization_type == "virtualbox"
+      when: ansible_virtualization_type | lower == "virtualbox"
 
     - name: Run VirtualBox Guest Additions Installer
       command: sh /tmp/vbox/VBoxLinuxAdditions.run
       changed_when: yes
-      when: ansible_virtualization_type == "virtualbox"
+      when: ansible_virtualization_type | lower == "virtualbox"
 
     - name: Unmount VirtualBox Guest Additions ISO
       mount:
@@ -122,7 +134,7 @@
         src: "/home/vagrant/VBoxGuestAdditions_{{ virtualbox_version.stdout }}.iso"
         state: absent
         fstype: iso9660
-      when: ansible_virtualization_type == "virtualbox"
+      when: ansible_virtualization_type | lower == "virtualbox"
 
     - name: Remove Unneeded Packages
       dnf:
@@ -131,12 +143,22 @@
           - kernel-headers
           - "kernel-devel*"
         state: absent
+      when: ansible_os_family == "RedHat"
+
+    - name: Install open-vm-tools
+      dnf:
+        name: open-vm-tools
+        state: latest
+      when:
+        - ansible_os_family == "RedHat"
+        - ansible_virtualization_type | lower == "vmware"
 
     - name: Enable Firewalld
       service:
         name: firewalld
         state: started
         enabled: yes
+      when: ansible_os_family == "RedHat"
 
     - name: Firewalld Enable ssh
       firewalld:
@@ -144,6 +166,7 @@
         service: ssh
         permanent: yes
         state: enabled
+      when: ansible_os_family == "RedHat"
 
     - name: Firewalld Disable cockpit
       firewalld:
@@ -151,6 +174,7 @@
         service: cockpit
         permanent: yes
         state: disabled
+      when: ansible_os_family == "RedHat"
 
     - name: Firewalld Disable dhcpv6-client
       firewalld:
@@ -158,9 +182,12 @@
         service: cockpit
         permanent: yes
         state: disabled
+      when: ansible_os_family == "RedHat"
 
     - name: Firewalld Set Default Zone Public
       command: firewall-cmd --set-default-zone=public
+      when: ansible_os_family == "RedHat"
 
     - name: Firewalld Reload
       command: firewall-cmd --reload
+      when: ansible_os_family == "RedHat"

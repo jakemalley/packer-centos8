@@ -1,5 +1,5 @@
 packer_cache/*
-output-virtualbox-iso/*
+output-*-iso/*
 .vagrant/
 iso/*
 build/*
