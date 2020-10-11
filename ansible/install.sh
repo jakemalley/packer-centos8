@@ -5,7 +5,7 @@
 set -e
 set -x
 
-dnf update
+dnf -y update
 dnf -y install python3
 alternatives --set python /usr/bin/python3
 pip3 install ansible
