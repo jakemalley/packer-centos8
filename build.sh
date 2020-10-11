@@ -2,7 +2,7 @@
 # Script to build packer-centos8
 
 set -e
-VERSION="0.0.9"
+VERSION="0.0.10"
 DESCRIPTION="CentOS 8 Image Built with Packer"
 
 echo "Building version v${VERSION}..."
