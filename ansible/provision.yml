@@ -14,7 +14,7 @@
         content: |
           Built with Packer!
           Box Description: {{ packer_box_description }}
-          Box Version: v{{ packer_box_version }}\n"
+          Box Version: v{{ packer_box_version }}
           Build Date: {{ ansible_date_time.date }} {{ ansible_date_time.time }}
         dest: /root/.packer_info
 
